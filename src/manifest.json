@@ -1,0 +1,36 @@
+{
+    "manifest_version": 2,
+    "name": "Regex Search",
+    "version": "1.0",
+
+    "description": "Search page content using JS RegExps",
+
+    "icons": {
+        "48": "icons/48.png",
+        "96": "icons/96.png"
+    },
+
+    "browser_specific_settings": {
+        "gecko": {
+            "data_collection_permissions": {
+                "required": ["none"]
+            }
+        }
+    },
+
+    "permissions": ["activeTab"],
+
+    "browser_action": {
+        "default_icon": "icons/96.png",
+        "default_title": "Regex search",
+        "default_popup": "popup.html"
+    },
+
+    "content_scripts": [
+        {
+            "matches": ["*://*/*"],
+            "js": ["content.js"]
+        }
+    ]
+}
+
