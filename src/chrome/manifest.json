@@ -1,7 +1,7 @@
 {
-    "manifest_version": 2,
-    "name": "Regex Search",
-    "version": "1.0",
+    "manifest_version": 3,
+    "name": "Regex Search v0.2",
+    "version": "0.2",
 
     "description": "Search page content using JS RegExps",
 
@@ -11,16 +11,11 @@
     },
 
     "browser_specific_settings": {
-        "gecko": {
-            "data_collection_permissions": {
-                "required": ["none"]
-            }
-        }
     },
 
-    "permissions": ["activeTab"],
+    "permissions": ["activeTab", "tabs", "scripting"],
 
-    "browser_action": {
+    "action": {
         "default_icon": "icons/96.png",
         "default_title": "Regex search",
         "default_popup": "popup.html"
