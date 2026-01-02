@@ -12,7 +12,7 @@
 > While it generally works okay on dynamic websites, it is best used on static 
 pages (like text-based guides, docs, or wiki articles)
 
-## 🎨 Tasks & features
+## 🎨 Features
 
 * Lightweight
 * Fast
