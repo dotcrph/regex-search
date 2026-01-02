@@ -83,7 +83,7 @@
         lastRegex = regexStr;
 
         const regex = new RegExp(regexStr, "dg" + flags);
-        console.log("Highlighting matches for: ", regex);
+        console.debug("Highlighting matches for: ", regex);
 
         const nodeIterator = document.createNodeIterator(
             document.body, 
@@ -102,7 +102,7 @@
         let matchedNodes = [];
         let node;
         while ((node = nodeIterator.nextNode())) {
-            console.log("Found match in node: ", node);
+            console.debug("Found match in node: ", node);
             matchedNodes.push(node);
         }
 
@@ -114,8 +114,8 @@
             while (
                 (regexExec = regex.exec(leftoverNode.textContent)) !== null
             ) {
-                console.log("Operating on node: ", leftoverNode);
-                console.log("Match: ", regexExec);
+                console.debug("Operating on node: ", leftoverNode);
+                console.debug("Match: ", regexExec);
 
                 const startIndex = regexExec.indices[0][0];
                 const endIndex = regexExec.indices[0][1];
@@ -135,14 +135,14 @@
                 leftoverNode.nodeValue = leftoverNode.nodeValue
                                          .substring(matchLength);
 
-                console.log("Created new span and text node: ", leftoverNode);
+                console.debug("Created new span and text node: ", leftoverNode);
 
                 matches.push(newSpan);
                 regex.lastIndex = 0;
             }
         }
 
-        console.log("Generated match table:", matches);
+        console.debug("Generated match table:", matches);
 
         if (matches.length !== 0) {
             selectionIndex = 0;
@@ -153,7 +153,7 @@
     function updateSelection() {
         const selectedElement = matches[selectionIndex];
 
-        console.log("Selection #", selectionIndex, ":", selectedElement)
+        console.debug("Selection #", selectionIndex, ":", selectedElement)
 
         selectTextInElement(selectedElement);
         selectedElement.scrollIntoView({ block: 'center' });

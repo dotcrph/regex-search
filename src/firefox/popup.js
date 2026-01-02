@@ -96,7 +96,7 @@ document.addEventListener('DOMContentLoaded', async (event) => {
     dError.hidden = true;
 
     currentTab = newTab;
-    console.log("Current tab: ", currentTab);
+    console.debug("Current tab: ", currentTab);
 
     await updateCounters();
     await updateLastInput();
@@ -122,7 +122,7 @@ function quickSearch() {
         }
     );
 
-    console.log("Sent QUICK_SEARCH for id " + currentTab.id);
+    console.debug("Sent QUICK_SEARCH for id " + currentTab.id);
 
     updateCounters();
 }
@@ -134,7 +134,7 @@ function clearMatches() {
         currentTab.id, { action: "CLEAR_MATCHES", }
     );
 
-    console.log("Sent CLEAR_MATCHES for id " + currentTab.id);
+    console.debug("Sent CLEAR_MATCHES for id " + currentTab.id);
 
     updateCounters();
 }
@@ -146,7 +146,7 @@ function showNext() {
         currentTab.id, { action: "SHOW_NEXT" }
     );
 
-    console.log("Sent SHOW_NEXT for id " + currentTab.id);
+    console.debug("Sent SHOW_NEXT for id " + currentTab.id);
 
     updateSelectionIndex();
 }
@@ -158,7 +158,7 @@ function showPrev() {
         currentTab.id, { action: "SHOW_PREV" }
     );
 
-    console.log("Sent SHOW_PREV for id " + currentTab.id);
+    console.debug("Sent SHOW_PREV for id " + currentTab.id);
 
     updateSelectionIndex();
 }
