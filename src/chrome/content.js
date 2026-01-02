@@ -193,14 +193,21 @@
                     return true;
 
                 case "GET_LAST_INPUT":
-                    return { 
+                    sendResponse({ 
                         lastRegex: lastRegex,
                         lastFlags: lastFlags 
-                    };
+                    });
+                    return true;
                 case "GET_MATCHES":
-                    return { matches: matches ? matches.length : null };
+                    sendResponse({ 
+                        matches: matches ? matches.length : null 
+                    });
+                    return true;
                 case "GET_SELECTION":
-                    return { selection: selectionIndex };
+                    sendResponse({ 
+                        selection: selectionIndex 
+                    });
+                    return true;
 
                 default:
                     console.error("Unknown message from popup.js "
