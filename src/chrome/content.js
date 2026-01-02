@@ -44,7 +44,7 @@
         selection.addRange(range);
     }
 
-    function clearPreviousMatches() {
+    function clearMatches() {
         if (matches === null) return;
 
         for (const span of matches) {
@@ -69,7 +69,7 @@
         selectionIndex = null;
     }
 
-    function highlightMatches(regexStr, flags) {
+    function quickSearch(regexStr, flags) {
         flags = sanitizeInputFlags(flags);
         lastFlags = flags;
 
@@ -143,18 +143,14 @@
         }
 
         console.log("Generated match table:", matches);
+
+        if (matches.length !== 0) {
+            selectionIndex = 0;
+            updateSelection();
+        }
     }
 
-    function selectMatch(isNext) {
-        if (matches === null || matches.length === 0) {
-            return;
-        }
-
-        selectionIndex = selectionIndex !== null 
-                    ? (selectionIndex + (isNext ? 1 : matches.length - 1)) 
-                       % matches.length
-                    : isNext ? 0 : matches.length - 1;
-
+    function updateSelection() {
         const selectedElement = matches[selectionIndex];
 
         console.log("Selection #", selectionIndex, ":", selectedElement)
@@ -163,15 +159,27 @@
         selectedElement.scrollIntoView({ block: 'center' });
     }
 
+    function selectMatch(isNext) {
+        if (selectionIndex === null
+            || matches === null 
+            || matches.length === 0) {
+            return;
+        }
+
+        const indexShift = isNext ? 1 : matches.length - 1;
+        selectionIndex = (selectionIndex + indexShift) % matches.length
+        updateSelection();
+    }
+
     chrome.runtime.onMessage.addListener(
         async (message, sender, sendResponse) => {
             switch (message.action) {
-                case "QUICKSEARCH": 
-                    clearPreviousMatches();
-                    highlightMatches(message.regex, message.flags);
+                case "QUICK_SEARCH": 
+                    clearMatches();
+                    quickSearch(message.regex, message.flags);
                     return;
-                case "CLEAR_HIGHLIGHT": 
-                    clearPreviousMatches();
+                case "CLEAR_MATCHES": 
+                    clearMatches();
                     return;
                 case "SHOW_NEXT": 
                     selectMatch(true);

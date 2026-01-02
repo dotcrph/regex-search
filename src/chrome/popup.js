@@ -2,11 +2,10 @@ var currentTab;
 var lastRegexInput = null;
 var lastFlagsInput = null;
 
-async function checkConnection(tab) {
+async function checkTabConnection(tab) {
     try {
         const response = await chrome.tabs.sendMessage(
-            tab.id, 
-            { action: "CHECK_CONNECTION" }
+            tab.id, { action: "CHECK_CONNECTION" }
         );
 
         if (response !== true) {
@@ -21,24 +20,15 @@ async function checkConnection(tab) {
 
 async function injectContentScript(tabId) {
     try {
-        try {
-            await chrome.scripting.executeScript({
-                target: { tabId: tabId },
-                files: ["content.js"] 
-            });
+        await chrome.scripting.executeScript({
+            target: { tabId: tabId },
+            files: ["content.js"] 
+        });
 
-            console.log("Injected content script in tab id", tabId);
-
-            return;
-        } catch (e) {
-            console.warn("Failed to inject content script into tab " 
-                            + tabId + "(" + e + ")");
-            return;
-        }
+        console.log("Injected content script in tab id", tabId);
     } catch (e) {
-        console.warn("Something happened while injecting content scripts. Chances are you aren't using Chromium, and in that case you can ignore this error, otherwise see this:\n"
-                        + e);
-        return
+        console.warn("Failed to inject content script into tab " 
+                        + tabId + "(" + e + ")");
     }
 }
 
@@ -51,13 +41,14 @@ function validateCurrentTab() {
     return true;
 }
 
-function updateOnRegexClean(isClean) {
-    if (isClean !== false && isClean !== true) {
-        isClean = lastRegexInput === null 
-                  || regexField.value === lastRegexInput;
-    }
+function toggleAsterisk() {
+    asterisk.hidden = lastRegexInput === null 
+                      || regexField.value === lastRegexInput;
+}
 
-    asterisk.hidden = isClean;
+function toggleSelectionButtons(isEnabled) {
+    bNext.disabled = !isEnabled;
+    bPrev.disabled = !isEnabled;
 }
 
 async function updateLastInput() {
@@ -66,13 +57,15 @@ async function updateLastInput() {
     );
 
     if (!response) return;
+
     lastRegexInput = response.lastRegex;
     regexField.placeholder = lastRegexInput ?? "regex" ;
+
     lastFlagsInput = response.lastFlags;
     flagsField.placeholder = lastFlagsInput ?? "flags" ;
 }
 
-async function updateSelection() {
+async function updateSelectionIndex() {
     const response = await chrome.tabs.sendMessage(
         currentTab.id, { action: "GET_SELECTION" }
     );
@@ -88,10 +81,14 @@ async function updateCounters() {
         currentTab.id, { action: "GET_MATCHES" }
     );
 
-    if (!response || !response.matches) return;
+    if (!response) return;
+
+    toggleSelectionButtons(response.matches !== null
+                           && response.matches !== 0);
+
     matchCounter.textContent = response.matches ?? "";
 
-    await updateSelection();
+    await updateSelectionIndex();
 }
 
 document.addEventListener('DOMContentLoaded', async (event) => {
@@ -102,17 +99,17 @@ document.addEventListener('DOMContentLoaded', async (event) => {
 
     const newTab = tabs[0];
 
-    let isConnected = await checkConnection(newTab);
+    let isConnected = await checkTabConnection(newTab);
 
     if (!isConnected) {
-        // Trying to inject the content script manually here,
-        // because chrome just wont do it automatically for old
-        // tabs for whatever reason?
-        await injectContentScript(newTab.id);
+        // Injecting the script for tabs that were
+        // open before the plugin was installed
+        await injectContentScript(newTab.id); 
 
+        // FIXME: do this in literally any other way
         await new Promise(resolve => setTimeout(resolve, 10));
 
-        isConnected = await checkConnection(newTab);
+        isConnected = await checkTabConnection(newTab);
 
         if (!isConnected) {
             errorText.textContent = "Failed to connect to this tab, try another :(";
@@ -129,42 +126,42 @@ document.addEventListener('DOMContentLoaded', async (event) => {
     await updateCounters();
     await updateLastInput();
 
-    updateOnRegexClean();
+    toggleAsterisk();
+    regexField.focus();
 });
 
-
-regexField.addEventListener('input', updateOnRegexClean);
+regexField.addEventListener('input', toggleAsterisk);
 
 function quickSearch() {
     if (!validateCurrentTab()) return;
 
     lastRegexInput = regexField.value;
-    updateOnRegexClean(true);
+    asterisk.hidden = true;
 
     chrome.tabs.sendMessage(
         currentTab.id, 
         {
-            action: "QUICKSEARCH",
+            action: "QUICK_SEARCH",
             regex: regexField.value,
             flags: flagsField.value
         }
     );
 
-    console.log("Sent QUICKSEARCH for id " + currentTab.id);
+    console.log("Sent QUICK_SEARCH for id " + currentTab.id);
 
     updateCounters();
 }
 
-function clear() {
+function clearMatches() {
     if (!validateCurrentTab()) return;
 
     chrome.tabs.sendMessage(
-        currentTab.id, { action: "CLEAR_HIGHLIGHT", }
+        currentTab.id, { action: "CLEAR_MATCHES", }
     );
 
-    console.log("Sent CLEAR_HIGHLIGHT for id " + currentTab.id);
+    console.log("Sent CLEAR_MATCHES for id " + currentTab.id);
 
-    updateCounters(); // TODO: await for clearPreviousMatches() to finish
+    updateCounters();
 }
 
 function showNext() {
@@ -176,7 +173,7 @@ function showNext() {
 
     console.log("Sent SHOW_NEXT for id " + currentTab.id);
 
-    updateSelection();
+    updateSelectionIndex();
 }
 
 function showPrev() {
@@ -188,41 +185,72 @@ function showPrev() {
 
     console.log("Sent SHOW_PREV for id " + currentTab.id);
 
-    updateSelection();
+    updateSelectionIndex();
 }
 
 bQuicksearch.addEventListener("click", quickSearch);
-bClear.addEventListener("click", clear);
+bClear.addEventListener("click", clearMatches);
 bNext.addEventListener("click", showNext);
 bPrev.addEventListener("click", showPrev);
 
 document.addEventListener('keydown', (event) => {
-    if (event.key === "Enter") {
-        quickSearch();
+    if (event.target === regexField || event.target === flagsField) {
+        switch (event.key) {
+            case "Enter":
+                if (regexField.value !== "") {
+                    document.activeElement?.blur();
+                    quickSearch();
+                    break;
+                }
+
+                regexField.value = regexField.value === ""
+                                   ? lastRegexInput ?? ""
+                                   : regexField.value;
+
+                flagsField.value = flagsField.value === ""
+                                   ? lastFlagsInput ?? ""
+                                   : flagsField.value;
+
+                break;
+            case "Tab":
+                if (event.target !== flagsField) break;
+
+                window.requestAnimationFrame(() => {
+                    regexField.focus();
+                }); // because it will tab twice
+
+                break;
+        }
+
         return;
     }
 
-    if (event.target === regexField
-        || event.target === flagsField) return;
-
     switch (event.key) {
-        case "s":
-        case "v":
+        /*E*/ case "g":
+        /*V*/ case "q":
+            window.requestAnimationFrame(() => {
+                regexField.focus();
+            }); // because it will insert q/g in the text field
+            clearMatches();
+            break;
 
-        case "j":
-        case "n":
-        case "ArrowDown":
+        /*E*/ case "s":
+        /*V*/ case "j":
+        /*EV*/ case "n":
+        /*G*/ case "ArrowDown":
             showNext();
             break;
 
-        case "r":
-        case "p":
-        case "V":
-
-        case "k":
-        case "N":
-        case "ArrowUp":
+        /*E*/ case "r":
+        /*E*/ case "p":
+        /*V*/ case "k":
+        /*V*/ case "N":
+        /*G*/ case "ArrowUp":
             showPrev();
+            break;
+
+        /*EVG*/ case "Enter":
+            window.close();
             break;
     }
 });

@@ -10,9 +10,6 @@
         "96": "icons/96.png"
     },
 
-    "browser_specific_settings": {
-    },
-
     "permissions": ["activeTab", "tabs", "scripting"],
 
     "action": {
