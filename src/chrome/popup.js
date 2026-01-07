@@ -102,8 +102,6 @@ document.addEventListener('DOMContentLoaded', async (event) => {
     let isConnected = await checkTabConnection(newTab);
 
     if (!isConnected) {
-        // Injecting the script for tabs that were
-        // open before the plugin was installed
         await injectContentScript(newTab.id); 
 
         // FIXME: do this in literally any other way
