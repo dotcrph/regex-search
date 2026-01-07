@@ -10,7 +10,7 @@
         "96": "icons/96.png"
     },
 
-    "permissions": ["activeTab", "tabs", "scripting"],
+    "permissions": ["activeTab", "scripting"],
 
     "action": {
         "default_icon": "icons/96.png",
